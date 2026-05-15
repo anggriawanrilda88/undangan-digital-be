@@ -17,8 +17,10 @@ var (
 	ErrRSVPNotFound = errors.New("rsvp not found")
 
 	// Auth errors
-	ErrUnauthorized = errors.New("unauthorized")
-	ErrInvalidToken = errors.New("invalid or expired token")
+	ErrUnauthorized      = errors.New("unauthorized")
+	ErrInvalidToken      = errors.New("invalid or expired token")
+	ErrEmailTaken        = errors.New("email already registered")
+	ErrInvalidCredential = errors.New("invalid email or password")
 
 	// Validation errors
 	ErrInvalidSlug = errors.New("slug must be 3–60 lowercase alphanumeric characters and hyphens")
