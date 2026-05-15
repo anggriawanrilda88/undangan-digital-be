@@ -69,7 +69,10 @@ func AuthMiddleware() gin.HandlerFunc {
 }
 
 func verifySupabaseJWT(tokenStr string) (uuid.UUID, error) {
-	secret := os.Getenv("SUPABASE_JWT_SECRET")
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = os.Getenv("SUPABASE_JWT_SECRET")
+	}
 	if secret == "" {
 		return uuid.Nil, fmt.Errorf("SUPABASE_JWT_SECRET not configured")
 	}

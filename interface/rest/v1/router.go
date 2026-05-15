@@ -8,6 +8,7 @@ import (
 
 	"github.com/undangan-digital/api/app/usecase"
 	"github.com/undangan-digital/api/infra/persistence"
+	"github.com/undangan-digital/api/interface/rest/v1/auth"
 	"github.com/undangan-digital/api/interface/rest/v1/invitation"
 	"github.com/undangan-digital/api/interface/rest/v1/middleware"
 	"github.com/undangan-digital/api/interface/rest/v1/rsvp"
@@ -24,14 +25,17 @@ func NewRouter(db *gorm.DB) *gin.Engine {
 	r.Use(corsMiddleware())
 
 	// ── Repositories
+	userRepo := persistence.NewUserRepository(db)
 	invRepo := persistence.NewInvitationRepository(db)
 	rsvpRepo := persistence.NewRSVPRepository(db)
 
 	// ── Use Cases
+	authUC := usecase.NewAuthUseCase(userRepo)
 	invUC := usecase.NewInvitationUseCase(invRepo)
 	rsvpUC := usecase.NewRSVPUseCase(rsvpRepo, invRepo)
 
 	// ── Handlers
+	authHandler := auth.NewHandler(authUC)
 	invHandler := invitation.NewHandler(invUC)
 	rsvpHandler := rsvp.NewHandler(rsvpUC)
 
@@ -43,6 +47,8 @@ func NewRouter(db *gorm.DB) *gin.Engine {
 	})
 
 	// ── Public routes (no auth) ──────────────────────────────────
+	api.POST("/auth/register", authHandler.Register)
+	api.POST("/auth/login", authHandler.Login)
 	api.GET("/i/:slug", invHandler.GetPublicBySlug)
 	api.POST("/invitations/:id/rsvp", rsvpHandler.Submit)
 

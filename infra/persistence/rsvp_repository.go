@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"time"
 	"context"
 	"math"
 
@@ -75,9 +76,16 @@ func (r *rsvpRepository) Upsert(ctx context.Context, invitationID uuid.UUID, gue
 		GuestCount:   rsvp.GuestCount,
 		Message:      rsvp.Message,
 	}
-	if err := r.db.WithContext(ctx).Create(model).Error; err != nil {
+	// Use Exec to force guest_count=0 (GORM skips zero values with Create)
+	now := time.Now()
+	err = r.db.WithContext(ctx).Exec(
+		`INSERT INTO rsvps (id, invitation_id, guest_name, status, guest_count, message, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		model.ID, model.InvitationID, model.GuestName, model.Status, model.GuestCount, model.Message, now,
+	).Error
+	if err != nil {
 		return nil, err
 	}
+	rsvp.CreatedAt = now
 	// Increment rsvp_count only on new insert
 	r.db.WithContext(ctx).Model(&models.InvitationModel{}).
 		Where("id = ?", invitationID).

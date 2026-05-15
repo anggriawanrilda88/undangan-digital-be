@@ -12,7 +12,7 @@ type RSVPModel struct {
 	InvitationID uuid.UUID `gorm:"type:uuid;not null;index"`
 	GuestName    string    `gorm:"type:varchar(100);not null"`
 	Status       string    `gorm:"type:varchar(20);not null"`
-	GuestCount   int       `gorm:"not null;default:1"`
+	GuestCount   int       `gorm:"not null;default:0"`
 	Message      string    `gorm:"type:text"`
 	CreatedAt    time.Time `gorm:"index"`
 }

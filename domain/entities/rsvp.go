@@ -36,9 +36,6 @@ type RSVPSummary struct {
 }
 
 func NewRSVP(invitationID uuid.UUID, guestName string, status RSVPStatus, guestCount int, message string) *RSVP {
-	if guestCount < 1 {
-		guestCount = 1
-	}
 	return &RSVP{
 		ID:           uuid.New(),
 		InvitationID: invitationID,

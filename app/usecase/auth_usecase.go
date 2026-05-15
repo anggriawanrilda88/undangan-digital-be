@@ -57,7 +57,7 @@ func (uc *AuthUseCase) Register(ctx context.Context, input RegisterInput) (*Auth
 		return nil, err
 	}
 
-	token, err := middleware.GenerateJWT(user.ID)
+	token, err := middleware.GenerateJWT(user.ID, user.Email, user.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (uc *AuthUseCase) Login(ctx context.Context, input LoginInput) (*AuthResult
 		return nil, domainerrors.ErrInvalidCredential
 	}
 
-	token, err := middleware.GenerateJWT(user.ID)
+	token, err := middleware.GenerateJWT(user.ID, user.Email, user.Name)
 	if err != nil {
 		return nil, err
 	}

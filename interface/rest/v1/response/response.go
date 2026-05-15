@@ -41,6 +41,36 @@ func ValidationError(c *gin.Context, message string) {
 	})
 }
 
+func BadRequest(c *gin.Context, message string) {
+	c.JSON(http.StatusBadRequest, gin.H{
+		"success": false,
+		"error": gin.H{
+			"code":    "VALIDATION_ERROR",
+			"message": message,
+		},
+	})
+}
+
+func Conflict(c *gin.Context, message string) {
+	c.JSON(http.StatusConflict, gin.H{
+		"success": false,
+		"error": gin.H{
+			"code":    "CONFLICT",
+			"message": message,
+		},
+	})
+}
+
+func InternalError(c *gin.Context, message string) {
+	c.JSON(http.StatusInternalServerError, gin.H{
+		"success": false,
+		"error": gin.H{
+			"code":    "INTERNAL_ERROR",
+			"message": message,
+		},
+	})
+}
+
 func mapDomainError(err error) (string, int) {
 	switch {
 	case errors.Is(err, domainerrors.ErrInvitationNotFound),

@@ -10,7 +10,7 @@ import (
 // ── Request DTOs ──────────────────────────────────────────────────────────────
 
 type CreateInvitationRequest struct {
-	Slug    string                        `json:"slug" binding:"required,min=3,max=60,alphanum_dash"`
+	Slug    string                        `json:"slug" binding:"required,min=3,max=60"`
 	Config  entities.InvitationConfig     `json:"config"`
 	Content CreateInvitationContentRequest `json:"content" binding:"required"`
 }
