@@ -75,10 +75,17 @@ func (s *Service) send(to, subject, body string) error {
 	}
 
 	addr := fmt.Sprintf("%s:%d", s.host, s.port)
-	auth := smtp.PlainAuth("", s.user, s.password, s.host)
-
 	msg := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n%s",
 		s.from, to, subject, body)
 
-	return smtp.SendMail(addr, auth, s.user, []string{to}, []byte(msg))
+	var auth smtp.Auth
+	if s.user != "" && s.password != "" {
+		auth = smtp.PlainAuth("", s.user, s.password, s.host)
+	}
+
+	fromAddr := s.user
+	if fromAddr == "" {
+		fromAddr = s.from
+	}
+	return smtp.SendMail(addr, auth, fromAddr, []string{to}, []byte(msg))
 }
