@@ -9,10 +9,12 @@ import (
 	"github.com/undangan-digital/api/app/usecase"
 	"github.com/undangan-digital/api/infra/email"
 	"github.com/undangan-digital/api/infra/persistence"
+	"github.com/undangan-digital/api/infra/storage"
 	"github.com/undangan-digital/api/interface/rest/v1/auth"
 	"github.com/undangan-digital/api/interface/rest/v1/invitation"
 	"github.com/undangan-digital/api/interface/rest/v1/middleware"
 	"github.com/undangan-digital/api/interface/rest/v1/rsvp"
+	"github.com/undangan-digital/api/interface/rest/v1/upload"
 )
 
 func NewRouter(db *gorm.DB) *gin.Engine {
@@ -44,6 +46,13 @@ func NewRouter(db *gorm.DB) *gin.Engine {
 	authHandler := auth.NewHandler(authUC)
 	invHandler := invitation.NewHandler(invUC)
 	rsvpHandler := rsvp.NewHandler(rsvpUC)
+
+	// Upload handler (MinIO)
+	minioClient, err := storage.NewMinIOClient()
+	if err != nil {
+		panic("failed to init MinIO: " + err.Error())
+	}
+	uploadHandler := upload.NewHandler(minioClient)
 
 	api := r.Group("/api/v1")
 
@@ -79,6 +88,9 @@ func NewRouter(db *gorm.DB) *gin.Engine {
 
 		// Slug check
 		protected.GET("/slugs/check", invHandler.CheckSlug)
+
+		// Upload
+		protected.POST("/upload/image", uploadHandler.UploadImage)
 	}
 
 	return r

@@ -80,6 +80,12 @@ func mapDomainError(err error) (string, int) {
 	case errors.Is(err, domainerrors.ErrInvitationForbidden):
 		return "FORBIDDEN", http.StatusForbidden
 
+	case errors.Is(err, domainerrors.ErrAlreadyHasPublished):
+		return "ALREADY_HAS_PUBLISHED", http.StatusConflict
+
+	case errors.Is(err, domainerrors.ErrAlreadyVerified):
+		return "ALREADY_VERIFIED", http.StatusConflict
+
 	case errors.Is(err, domainerrors.ErrSlugTaken):
 		return "SLUG_TAKEN", http.StatusConflict
 
