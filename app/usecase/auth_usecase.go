@@ -205,7 +205,7 @@ func (uc *AuthUseCase) ResendOTP(ctx context.Context, emailAddr string) error {
 	if err != nil {
 		return err
 	}
-	if count >= 3 {
+	if count > 3 {
 		return domainerrors.ErrOTPRateLimited
 	}
 
