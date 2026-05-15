@@ -29,4 +29,7 @@ type InvitationRepository interface {
 
 	// IsSlugAvailable checks if a slug is not taken
 	IsSlugAvailable(ctx context.Context, slug string) (bool, error)
+
+	// CountPublishedByUser counts published invitations for a user
+	CountPublishedByUser(ctx context.Context, userID uuid.UUID) (int64, error)
 }

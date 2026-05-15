@@ -123,6 +123,14 @@ func (uc *InvitationUseCase) Update(ctx context.Context, userID, invID uuid.UUID
 	if req.Status != nil {
 		switch *req.Status {
 		case entities.InvitationStatusPublished:
+			// BE-S02-5: enforce max 1 published per user
+			count, err := uc.invRepo.CountPublishedByUser(ctx, userID)
+			if err != nil {
+				return nil, err
+			}
+			if count > 0 && inv.Status != entities.InvitationStatusPublished {
+				return nil, domainerrors.ErrAlreadyHasPublished
+			}
 			inv.Publish()
 		case entities.InvitationStatusArchived:
 			inv.Archive()
@@ -130,6 +138,7 @@ func (uc *InvitationUseCase) Update(ctx context.Context, userID, invID uuid.UUID
 			inv.Status = *req.Status
 		}
 	}
+	// BE-S02-4: status tidak diubah jika field status tidak dikirim
 
 	if err := uc.invRepo.Update(ctx, inv); err != nil {
 		return nil, err

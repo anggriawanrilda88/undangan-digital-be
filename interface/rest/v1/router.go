@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/undangan-digital/api/app/usecase"
+	"github.com/undangan-digital/api/infra/email"
 	"github.com/undangan-digital/api/infra/persistence"
 	"github.com/undangan-digital/api/interface/rest/v1/auth"
 	"github.com/undangan-digital/api/interface/rest/v1/invitation"
@@ -26,11 +27,16 @@ func NewRouter(db *gorm.DB) *gin.Engine {
 
 	// ── Repositories
 	userRepo := persistence.NewUserRepository(db)
+	evRepo := persistence.NewEmailVerificationRepository(db)
+	prRepo := persistence.NewPasswordResetRepository(db)
 	invRepo := persistence.NewInvitationRepository(db)
 	rsvpRepo := persistence.NewRSVPRepository(db)
 
+	// ── Services
+	emailSvc := email.NewService()
+
 	// ── Use Cases
-	authUC := usecase.NewAuthUseCase(userRepo)
+	authUC := usecase.NewAuthUseCase(userRepo, evRepo, prRepo, emailSvc)
 	invUC := usecase.NewInvitationUseCase(invRepo)
 	rsvpUC := usecase.NewRSVPUseCase(rsvpRepo, invRepo)
 
@@ -49,36 +55,30 @@ func NewRouter(db *gorm.DB) *gin.Engine {
 	// ── Public routes (no auth) ──────────────────────────────────
 	api.POST("/auth/register", authHandler.Register)
 	api.POST("/auth/login", authHandler.Login)
+	api.POST("/auth/verify-email", authHandler.VerifyEmail)
+	api.POST("/auth/resend-otp", authHandler.ResendOTP)
+	api.POST("/auth/forgot-password", authHandler.ForgotPassword)
+	api.POST("/auth/reset-password", authHandler.ResetPassword)
 	api.GET("/i/:slug", invHandler.GetPublicBySlug)
 	api.POST("/invitations/:id/rsvp", rsvpHandler.Submit)
 
 	// ── Auth middleware ──────────────────────────────────────────
-	auth := api.Group("/")
-	auth.Use(middleware.AuthMiddleware())
+	protected := api.Group("/")
+	protected.Use(middleware.AuthMiddleware())
 	{
 		// Auth
-		auth.GET("/auth/me", func(c *gin.Context) {
-			userID, email, name := middleware.GetUserProfile(c)
-			c.JSON(200, gin.H{
-				"success": true,
-				"data": gin.H{
-					"id":    userID,
-					"email": email,
-					"name":  name,
-				},
-			})
-		})
+		protected.GET("/auth/me", authHandler.Me)
 
 		// Invitations
-		auth.GET("/invitations", invHandler.List)
-		auth.POST("/invitations", invHandler.Create)
-		auth.GET("/invitations/:id", invHandler.GetByID)
-		auth.PUT("/invitations/:id", invHandler.Update)
-		auth.DELETE("/invitations/:id", invHandler.Delete)
-		auth.GET("/invitations/:id/rsvp", rsvpHandler.List)
+		protected.GET("/invitations", invHandler.List)
+		protected.POST("/invitations", invHandler.Create)
+		protected.GET("/invitations/:id", invHandler.GetByID)
+		protected.PUT("/invitations/:id", invHandler.Update)
+		protected.DELETE("/invitations/:id", invHandler.Delete)
+		protected.GET("/invitations/:id/rsvp", rsvpHandler.List)
 
-		// Slug check — blocker US-04
-		auth.GET("/slugs/check", invHandler.CheckSlug)
+		// Slug check
+		protected.GET("/slugs/check", invHandler.CheckSlug)
 	}
 
 	return r
@@ -87,10 +87,9 @@ func NewRouter(db *gorm.DB) *gin.Engine {
 func corsMiddleware() gin.HandlerFunc {
 	allowedOrigins := map[string]bool{
 		"https://undangan-digital.anggriawan.my.id": true,
-		"http://localhost:3000":                    true, // local dev Next.js
+		"http://localhost:3000":                     true,
 	}
 
-	// Allow additional origin from env (e.g. staging)
 	if extra := os.Getenv("FRONTEND_URL"); extra != "" {
 		allowedOrigins[extra] = true
 	}

@@ -136,3 +136,11 @@ func toInvitationEntity(m *models.InvitationModel) (*entities.Invitation, error)
 		PublishedAt: m.PublishedAt,
 	}, nil
 }
+
+func (r *invitationRepository) CountPublishedByUser(ctx context.Context, userID uuid.UUID) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&models.InvitationModel{}).
+		Where("user_id = ? AND status = ?", userID, "published").
+		Count(&count).Error
+	return count, err
+}
